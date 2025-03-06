@@ -26,7 +26,7 @@ from utils.eval_utils import cls_metrics
 from utils.gen_utils import create_folder
 
 
-with open('paths.json', 'r') as f:
+with open('/workspaces/DRG-LLaMA/paths.json', 'r') as f:
         path = json.load(f)
         train_set_path = path["train_set_path"]
         test_set_path = path["test_set_path"]
@@ -106,7 +106,8 @@ def train(
     if ddp:
         device_map = {"": int(os.environ.get("LOCAL_RANK") or 0)}
 
-    # Check if parameter passed or if set within environ
+    # Check if parameter passed o
+    # r if set within environ
     use_wandb = len(wandb_project) > 0 or (
         "WANDB_PROJECT" in os.environ and len(os.environ["WANDB_PROJECT"]) > 0
     )
@@ -121,6 +122,7 @@ def train(
 
     model = LlamaForSequenceClassification.from_pretrained(
         base_model, 
+        
         num_labels=num_labels, 
         load_in_8bit=True, 
         torch_dtype=torch.float16,  
@@ -129,6 +131,7 @@ def train(
 
     tokenizer = LlamaTokenizer.from_pretrained(
         base_model, 
+        
         model_max_length=cutoff_len,
         cache_dir=cache_dir)
 

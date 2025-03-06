@@ -12,7 +12,7 @@ def extract_HC(dc_summary_path):
 
   # Set up the regular expression to extract hospital course from discharge summary
   # Of note these patterns would not caputre all hospital courses, and is indeed a convservative approach to ensure quality of data
-  pattern1  = re.compile("Brief Hospital Course.*\n*((?:\n.*)+?)(Medications on Admission|___  on Admission|___ on Admission)")
+  pattern1  = re.compile("Brief Hospital Course:*\n*((?:\n.*)+?)(Medications on Admission|___  on Admission|___ on Admission)")
   pattern2  = re.compile("Brief Hospital Course.*\n*((?:\n.*)+?)Discharge Medications")
   pattern3  = re.compile("(Brief Hospital Course|rief Hospital Course|HOSPITAL COURSE)\
                         .*\n*((?:\n.*)+?)\
@@ -35,9 +35,9 @@ def extract_HC(dc_summary_path):
             return re.search(pattern4, note).group(2)
           else:
             return None
-
+  print("dc_summary_raw : " , dc_summary_raw.shape)
   # Apply the function to dc_summary_raw to extract hospital course
-  dc_summary_raw["hospital_course"] = dc_summary_raw["text"].apply(split_note)
+  #dc_summary_raw["hospital_course"] = dc_summary_raw["text"].apply(split_note)
 
   # Drop those records that do not have hospital course captured with above regular expression patterns
   dc_summary = dc_summary_raw[["hadm_id", "hospital_course"]].dropna()
@@ -56,7 +56,7 @@ def extract_HC(dc_summary_path):
 
   # only keep hadm_id and hospital_course
   dc_summary = dc_summary[["hadm_id", "hospital_course"]]
-
+  print("dc_summary : " , dc_summary.shape)
   return dc_summary
 
 ##############Step 2: Map all DRG codes to MS-DRG v34.0#####################
@@ -136,8 +136,11 @@ def merge_HC_drg(dc_summary, drg):
   # in dc_drg, create a new column called label, which is the mapped value from id2label where the key is drg_34_code
   dc_drg["label"] = dc_drg["drg_34_code"].map(dict(zip(id2label.drg_34_code, id2label.label)))
 
+  print(dc_drg.shape)
+  print(dc_drg.columns)
+  test_size=max(0.1, dc_drg['label'].nunique() / len(dc_drg))
   # split dc_drc into train and test, test takes 10% of the data, set radoom state to 42, stratify by label
-  train, test = train_test_split(dc_drg, test_size=0.1, random_state=42, stratify=dc_drg.label)
+  train, test = train_test_split(dc_drg, test_size=test_size, random_state=42, stratify=dc_drg.label)
 
   # rename hospital_course to text, remove column of hadm_id and drg_34_code, and save train and test to csv
   train = train.rename(columns={"hospital_course": "text"})
@@ -149,7 +152,7 @@ def merge_HC_drg(dc_summary, drg):
 
 if __name__ == "__main__":
     # Read path from the json file
-  with open('paths.json', 'r') as f:
+  with open('/workspaces/DRG-LLaMA/paths.json', 'r') as f:
       path = json.load(f)
       dc_summary_path = path["dc_summary_path"]
       mimic_drg_path = path["mimic_drg_path"]
@@ -162,6 +165,7 @@ if __name__ == "__main__":
   
   drg = map_drg(mimic_drg_path, drg_34_path, my_mapping_path)
   dc_summary = extract_HC(dc_summary_path)
+  print(dc_summary.shape)
   
   train, test, id2label = merge_HC_drg(dc_summary, drg)
 

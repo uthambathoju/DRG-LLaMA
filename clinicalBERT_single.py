@@ -20,7 +20,7 @@ from utils.eval_utils import cls_metrics
 from utils.gen_utils import create_folder
 
 
-with open('paths.json', 'r') as f:
+with open('/workspaces/DRG-LLaMA/paths.json', 'r') as f:
         path = json.load(f)
         train_set_path = path["train_set_path"]
         test_set_path = path["test_set_path"]
@@ -183,7 +183,7 @@ def train(
     model.config.use_cache = False
 
     trainer.train(resume_from_checkpoint=resume_from_checkpoint)
-
+    print(" SAVE PRETRAIN MODEL *********** :  ", output_dir)
     model.save_pretrained(output_dir)
 
 
